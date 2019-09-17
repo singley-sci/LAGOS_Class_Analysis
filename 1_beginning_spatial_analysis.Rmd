@@ -141,7 +141,7 @@ ggplot(aes(log10(lake_area_ha))) +
   geom_histogram(bins=50) +
   facet_wrap(~state, nrow=2) +
   theme_few() +
-  xlab('Lake Area [log10(Ha)]') +
+  xlab(bquote('Lake Area ['*log[10]*'(Ha)]')) +
   ylab('Frequency')
 ```
 
