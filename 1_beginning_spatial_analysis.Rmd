@@ -3,6 +3,8 @@ title: "LAGOS Spatial Analysis"
 author: "Matthew Ross"
 date: "9/11/2019"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -13,6 +15,7 @@ library(sf) #Spatial package that can read and create shapefiles
 library(mapview) #Interactive maps
 library(LAGOSNE) #Lots and lots of clean lake data
 library(USAboundaries) #USA states and counties
+library(ggthemes)
 ```
 
 
@@ -25,13 +28,15 @@ library(USAboundaries) #USA states and counties
 ### First download and then specifically grab the locus (or site lat longs)
 ```{r data-read}
 #Lagos download script
-lagosne_get(version='1.087.1',dest_folder = LAGOSNE:::lagos_path())
+#lagosne_get(dest_folder = LAGOSNE:::lagos_path())
 
 #Load in lagos
-lagos <- lagosne_load()
+#lagos <- lagosne_load()
 
 #Grab the lake centroid info
-lake_centers <- lagos$locus
+#lake_centers <- lagos$locus
+
+load('lake_centers.Rdata')  # work around for lagosne_get error
 ```
 
 
@@ -90,7 +95,13 @@ minnesota_lakes %>%
 ## 1) Show a map outline of Iowa and Illinois (similar to Minnesota map upstream)
 
 ```{r }
-#Your code here
+#Plot all the states to check if they loaded
+#mapview(states)
+IA_IL <- states %>%
+  filter(name %in% c('Iowa', 'Illinois')) %>%
+  st_transform(2163)
+
+mapview(IA_IL)
 ```
 
 
@@ -99,8 +110,12 @@ minnesota_lakes %>%
 combined? How does this compare to Minnesota?
 
 ```{r}
+#Subset lakes in Iowa and Illinois
+iowa_illinois_lakes <- spatial_lakes[IA_IL,]
 
+length(iowa_illinois_lakes$lagoslakeid) #total number of lakes in IA and IL
 ```
+
 
 
 ## 3) What is the distribution of lake size in Iowa vs. Minnesota?
@@ -109,8 +124,25 @@ combined? How does this compare to Minnesota?
 y axis (check out geom_histogram)
 
 ```{r}
+iowa <- states %>%
+  filter(name %in% c('Iowa')) %>%
+  st_transform(2163)
+  
+iowa_lakes <- spatial_lakes[iowa,] %>%
+  mutate(state = 'Iowa')
 
+minnesota_lakes <- minnesota_lakes %>% 
+  mutate(state = 'Minnesota')
 
+iowa_minnesota_lakes <- rbind(iowa_lakes, minnesota_lakes)
+
+iowa_minnesota_lakes %>%
+ggplot(aes(log10(lake_area_ha))) +
+  geom_histogram(bins=50) +
+  facet_wrap(~state, nrow=2) +
+  theme_few() +
+  xlab('Lake Area [log10(Ha)]') +
+  ylab('Frequency')
 ```
 
 
@@ -118,7 +150,11 @@ y axis (check out geom_histogram)
 by lake area in hectares
 
 ```{r}
-
+#Plotting the first 1000 lakes in the Iowa and Illinois data sets
+iowa_illinois_lakes %>%
+  slice(1:1000) %>%
+  arrange(lake_area_ha) %>%
+  mapview(.,zcol = 'lake_area_ha')
 ```
 
 
